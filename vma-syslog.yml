@@ -1,0 +1,17 @@
+---
+
+- hosts: esxhosts
+  remote_user: vi-admin
+  gather_facts: no
+  tasks:
+
+    - name: get syslog info from host
+      shell: esxcli --server {{ inventory_hostname }} system syslog config get
+# delegate to the vma appliance
+      delegate_to: 10.10.10.10
+      register: vma
+
+#    - debug: var=vma
+#    - debug: var=inventory_hostname
+
+

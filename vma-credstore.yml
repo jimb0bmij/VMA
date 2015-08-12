@@ -12,6 +12,7 @@
   tasks:
     - name: vma credstore exist
       shell: /usr/lib/vmware-vcli/apps/general/credstore_admin.pl list
+# delegate to the vma appliance
       delegate_to: 10.10.10.10
       register: vma
 

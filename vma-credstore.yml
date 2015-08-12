@@ -1,0 +1,60 @@
+---
+
+- hosts: esxhosts
+  remote_user: vi-admin
+  gather_facts: no
+  serial: 1
+  vars_prompt:
+    - name: "esx_pass"
+      prompt: "Enter (root) ESX host password"
+      private: yes
+
+  tasks:
+    - name: vma credstore exist
+      shell: /usr/lib/vmware-vcli/apps/general/credstore_admin.pl list
+      delegate_to: 10.10.10.10
+      register: vma
+
+    - name: vma credstore password (root)
+      shell: /usr/lib/vmware-vcli/apps/general/credstore_admin.pl add --server {{ inventory_hostname }} --username root --password {{ esx_pass }}
+      delegate_to: 10.10.10.10
+      when: vma.stdout | search("{{ inventory_hostname }}") == 0
+
+    - name: vma credstore get thumbprint
+      shell: esxcli --username root --server {{ inventory_hostname }} > sha.txt
+      delegate_to: 10.10.10.10
+      when: vma.stdout | search("{{ inventory_hostname }}") == 0
+
+    - name: Check to see if sha.txt exists
+      delegate_to: 10.10.10.10
+      stat: path=sha.txt
+      register: sha
+
+    - name: vma credstore temp store thumbprint
+      shell: cat sha.txt | cut -d' ' -f3,8 > sha2.txt
+      delegate_to: 10.10.10.10
+      when: sha.stat.exists == true
+
+    - name: Check to see if sha2.txt exists
+      delegate_to: 10.10.10.10
+      stat: path=sha2.txt
+      register: sha2
+
+    - name: vma credstore thumbprint
+      shell: while read first second; do /usr/lib/vmware-vcli/apps/general/credstore_admin.pl add --server $first --thumbprint $second; done < sha2.txt
+      delegate_to: 10.10.10.10
+      when: sha2.stat.exists == true
+
+    - name: remove file sha.txt
+      delegate_to: 10.10.10.10
+      file: path="sha.txt" state=absent
+
+    - name: remove file sha2.txt
+      delegate_to: 10.10.10.10
+      file: path="sha2.txt" state=absent
+
+#    - debug: var=vma.stdout.find({{ inventory_hostname }})
+#    - debug: var=inventory_hostname
+#    - debug: var=groups['esxhosts']
+
+

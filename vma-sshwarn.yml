@@ -1,0 +1,47 @@
+---
+
+- hosts: esxhosts
+  remote_user: vi-admin
+  gather_facts: no
+  serial: 1
+  vars:
+    name: "status/{{inventory_hostname}}/status.txt"
+    name2: "status/{{inventory_hostname}}"
+
+  tasks:
+
+    - name: disable alert in vcenter showing ssh is running
+      shell: esxcli --server {{ inventory_hostname }} system settings advanced set -o /UserVars/SuppressShellWarning -i 1
+      delegate_to: 10.10.10.10
+
+
+    - name: set firewall rule to allow ssh
+      shell: esxcli --server {{ inventory_hostname }} network firewall ruleset set --ruleset-id sshServer --enabled true
+      delegate_to: 10.10.10.10
+
+    - name: start ssh
+      shell: ./hostServiceManagement.pl -server {{ inventory_hostname }} -operation start -service TSM-SSH > status.txt
+      delegate_to: 10.10.10.10
+      register: vma
+
+    - name: get status
+      fetch: src=status.txt dest=status
+      delegate_to: 10.10.10.10
+
+
+    - name: display status
+      debug: msg="{{ lookup('file', item ) }}"
+      with_items: "{{ name }}"
+# set to false to keep status files
+      changed_when: True
+      notify: delete-status
+
+  handlers:
+    - name: delete-status
+      delegate_to: 127.0.0.1
+      file: path="{{ name }}" state=absent
+      file: path="{{ name2 }}" state=absent
+
+#    - debug: var=name
+#    - debug: var=status
+

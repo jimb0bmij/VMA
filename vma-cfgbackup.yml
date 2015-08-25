@@ -1,0 +1,28 @@
+---
+
+- hosts: esxhosts
+  remote_user: vi-admin
+  gather_facts: no
+  tasks:
+
+    - name: make cfgbackup dir
+      delegate_to: 10.10.10.10
+      file: path="./cfgbackups" state=directory
+
+    - name: Check to see if cfgbackup exists
+      delegate_to: 10.10.10.10
+      stat: path=cfgbackups
+      register: cfg
+
+    - name: create "host profile" backup of host
+      shell: vicfg-cfgbackup -s --server {{ inventory_hostname }} --username root ./cfgbackups/{{ inventory_hostname }}.bak
+      delegate_to: 10.10.10.10
+      when: cfg.stat.exists == true 
+
+      register: vma
+
+    - debug: var=vma
+    - debug: var=inventory_hostname
+    - debug: var=groups['esxhosts']
+
+

@@ -1,0 +1,39 @@
+---
+
+- hosts: esxhosts
+  remote_user: vi-admin
+  gather_facts: no
+  vars:
+    vswitch: "vSwitch0"
+    portgroup: "test"
+    vlanid: "999"
+
+  tasks:
+
+    - name: get list of portgroups from vSwitch
+      shell: esxcli --server {{ inventory_hostname }} network vswitch standard portgroup list
+      delegate_to: 10.10.10.10
+      changed_when: False
+      register: vma
+
+    - name: add portgroup to vSwitch 
+      shell: esxcli --server {{ inventory_hostname }} network vswitch standard portgroup add --portgroup-name "{{ portgroup }}" --vswitch-name {{ vswitch }}
+      delegate_to: 10.10.10.10
+      when: vma.stdout | search("{{ portgroup }}") == 0
+      register: vma1
+
+    - name: get list of portgroups from vSwitch
+      shell: esxcli --server {{ inventory_hostname }} network vswitch standard portgroup list
+      delegate_to: 10.10.10.10
+      changed_when: False
+      register: vma0
+
+
+    - name: add vlanid to portgroup on vSwitch
+      shell: esxcli --server {{ inventory_hostname }} network vswitch standard portgroup set --portgroup-name "{{ portgroup }}" --vlan-id {{ vlanid }}
+      delegate_to: 10.10.10.10
+#      when: vma0.stdout.find("{{ portgroup }}                    {{ vswitch }}                     0        0") == True
+      when: vma0.stdout.find("{{ check }}") == True
+      register: vma2
+
+

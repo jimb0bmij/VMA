@@ -12,11 +12,13 @@
 
     - name: disable alert in vcenter showing ssh is running
       shell: esxcli --server {{ inventory_hostname }} system settings advanced set -o /UserVars/SuppressShellWarning -i 1
+# delegate to the vma appliance
       delegate_to: 10.10.10.10
 
 
     - name: set firewall rule to allow ssh
       shell: esxcli --server {{ inventory_hostname }} network firewall ruleset set --ruleset-id sshServer --enabled true
+# delegate to the vma appliance     
       delegate_to: 10.10.10.10
 
     - name: start ssh

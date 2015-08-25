@@ -11,7 +11,7 @@
       delegate_to: 10.10.10.10
       register: vma
 
-#    - debug: var=vma
+    - debug: var=vma
 #    - debug: var=inventory_hostname
 
 

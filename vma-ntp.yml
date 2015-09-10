@@ -1,0 +1,42 @@
+---
+
+- hosts: esxhosts-preprod
+  remote_user: vi-admin
+  gather_facts: no
+  tasks:
+
+
+    - name: set ntp host
+      shell: vicfg-ntp --server {{ inventory_hostname }} --add ntp.ntpool.org
+      delegate_to: 10.10.10.10
+
+
+    - name: get time
+# change 4 to offset timezone
+      shell: 'h=$(date +%H); expr $h + 4'
+      delegate_to: localhost
+      register: time5
+
+    - name: get time
+      shell: 'm=$(date +%M); expr $m'
+      delegate_to: localhost
+      register: time6
+
+    - name: set time host
+      shell: esxcli --server {{ inventory_hostname }} system time set --hour {{ time5.stdout }} --min {{ time6.stdout }} 
+      delegate_to: 10.10.10.10
+      register: vmatime
+
+    - name: start ntp host
+      shell: vicfg-ntp --server {{ inventory_hostname }} --start
+      delegate_to: 10.10.10.10
+
+
+    - debug: var=vma
+    - debug: var=time5
+    - debug: var=time6
+    - debug: var=vmatime
+    - debug: var=inventory_hostname
+    - debug: var=groups['esxhosts-preprod']
+
+

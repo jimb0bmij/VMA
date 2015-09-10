@@ -1,0 +1,21 @@
+---
+
+- hosts: esxhosts-preprod
+  remote_user: vi-admin
+  gather_facts: no
+  tasks:
+  vars:
+    dns: "10.10.1.1"
+
+  tasks:
+
+    - name: add dns server
+      shell: esxcli --server {{ inventory_hostname }} network ip dns server add --server {{ dns }}
+      delegate_to: 10.10.10.10
+      register: vmadns
+
+    - debug: var=vmadns
+    - debug: var=inventory_hostname
+    - debug: var=groups['esxhosts-preprod']
+
+

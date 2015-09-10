@@ -1,0 +1,126 @@
+---
+
+- hosts: esxhosts-preprod
+  remote_user: vi-admin
+  gather_facts: no
+  vars:
+    vswitch: "vSwitch1"
+    portgroup: "Prod"
+    vlanid: "111"
+    check: "{{ portgroup }}                     {{ vswitch }}                     0        0"
+    check2: "{{ portgroup }}"
+    check3: "{{ vswitch }}"
+    check4: "{{ vlanid }}"
+
+  tasks:
+
+    - name: get list of nic
+      shell: esxcli --server {{ inventory_hostname }} network nic list
+      delegate_to: 10.10.10.10
+      changed_when: False
+      register: vmanic
+
+    - name: get list of vSwitch
+      shell: esxcli --server {{ inventory_hostname }} network vswitch standard list
+      delegate_to: 10.10.10.10
+      changed_when: False
+      register: vmavs
+
+    - name: get list of portgroups from vSwitch
+      shell: esxcli --server {{ inventory_hostname }} network vswitch standard portgroup list
+      delegate_to: 10.10.10.10
+      changed_when: False
+      register: vmapg
+
+    - name: get status of ip6
+      shell: esxcli --server {{ inventory_hostname }} system module parameters list -m tcpip4
+      delegate_to: 10.10.10.10
+      changed_when: False
+      register: vmaip6
+
+
+    - name: REMOVE vm network
+      shell: esxcli --server {{ inventory_hostname }} network vswitch standard portgroup remove --portgroup-name "VM Network" --vswitch-name "vSwitch0"
+      delegate_to: 10.10.10.10
+
+
+    - debug: var=vmapg.stdout.find("{{portgroup }}{{ vswitch }}")
+
+    - name: add vSwitch 
+      shell: esxcli --server {{ inventory_hostname }} network vswitch standard add --vswitch-name {{ vswitch }}
+      delegate_to: 10.10.10.10
+      when: vmavs.stdout.find("{{ vswitch }}") != 0
+
+    - name: add vSwitch2
+      shell: esxcli --server {{ inventory_hostname }} network vswitch standard add --vswitch-name vSwitch2
+      delegate_to: 10.10.10.10
+
+
+    - name: disable ip6
+      shell: esxcli --server {{ inventory_hostname }} system module parameters set -m tcpip4 -p ipv6=0
+      delegate_to: 10.10.10.10
+
+    - name: add vmnic 1
+      shell: esxcli --server {{ inventory_hostname }} network vswitch standard uplink add -u vmnic1 --vswitch-name vSwitch0
+      delegate_to: 10.10.10.10
+      when: vmavs.stdout | search("{{ portgroup }}") == 0
+      register: vman1
+
+    - name: add vmnic 4
+      shell: esxcli --server {{ inventory_hostname }} network vswitch standard uplink add -u vmnic4 --vswitch-name {{ vswitch }}
+      delegate_to: 10.10.10.10
+      register: vman4
+
+    - name: add vmnic 5
+      shell: esxcli --server {{ inventory_hostname }} network vswitch standard uplink add -u vmnic5 --vswitch-name {{ vswitch }}
+      delegate_to: 10.10.10.10
+      register: vman5
+
+    - name: add vmnic 6
+      shell: esxcli --server {{ inventory_hostname }} network vswitch standard uplink add -u vmnic6 --vswitch-name {{ vswitch }}
+      delegate_to: 10.10.10.10
+      register: vman6
+
+    - name: add vmnic 7
+      shell: esxcli --server {{ inventory_hostname }} network vswitch standard uplink add -u vmnic7 --vswitch-name {{ vswitch }}
+      delegate_to: 10.10.10.10
+      register: vman7
+
+    - name: add portgroup to vSwitch 
+      shell: esxcli --server {{ inventory_hostname }} network vswitch standard portgroup add --portgroup-name "{{ portgroup }}" --vswitch-name {{ vswitch }}
+      delegate_to: 10.10.10.10
+      when: vmapg.stdout | search("{{ portgroup }}") == 0
+      register: vma4
+
+    - name: add portgroup Private to vSwitch 2
+      shell: esxcli --server {{ inventory_hostname }} network vswitch standard portgroup add --portgroup-name Private --vswitch-name vSwitch2
+      delegate_to: 10.10.10.10
+
+    - name: Set nic failover on vSwitch0 
+      shell: esxcli --server {{ inventory_hostname }} network vswitch standard policy failover set --active-uplinks vmnic0,vmnic1 --vswitch-name vSwitch0
+      delegate_to: 10.10.10.10
+
+    - name: Set nic failover on vSwitch 
+      shell: esxcli --server {{ inventory_hostname }} network vswitch standard policy failover set --active-uplinks=vmnic4,vmnic5,vmnic6,vmnic7 --vswitch-name {{ vswitch }}
+      delegate_to: 10.10.10.10
+
+    - name: get list of portgroups from vSwitch
+      shell: esxcli --server {{ inventory_hostname }} network vswitch standard portgroup list
+      delegate_to: 10.10.10.10
+      changed_when: False
+      register: vmapgn
+
+    - name: add vlanid to portgroup  
+      shell: esxcli --server {{ inventory_hostname }} network vswitch standard portgroup set --portgroup-name "{{ portgroup }}" --vlan-id "{{ vlanid }}"
+      delegate_to: 10.10.10.10
+      when: vmapgn.stdout | search("{{ portgroup }}") == 1
+      register: vma{{ vlanid }}
+
+
+    - debug: var=vmanic.stdout_lines
+    - debug: var=vman1.stdout_lines
+    - debug: var=vman4.stdout_lines
+    - debug: var=vman6.stdout_lines
+    - debug: var=vmaip6.stdout_lines
+    - debug: var=vmavs.stdout_lines
+    - debug: var=vmapg.stdout_lines

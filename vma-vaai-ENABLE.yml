@@ -31,19 +31,19 @@
 
 
 
-    - name: VAAI disable FC storage /VMFS3/HardwareAcceleratedLocking
+    - name: VAAI enable FC storage /VMFS3/HardwareAcceleratedLocking
       shell: esxcli --server {{ inventory_hostname }} system settings advanced set --int-value {{ iv }} --option /VMFS3/HardwareAcceleratedLocking
       delegate_to: 10.10.10.10
       register: vmaMMT1
       when: vmavaai1.stdout | search("{{ ivc }}") == True
 
-    - name: VAAI disable FC storage /DataMover/HardwareAcceleratedMove
+    - name: VAAI enable FC storage /DataMover/HardwareAcceleratedMove
       shell: esxcli --server {{ inventory_hostname }} system settings advanced set --int-value {{ iv }} --option /DataMover/HardwareAcceleratedMove
       delegate_to: 10.10.10.10
       register: vmaMMT2
       when: vmavaai2.stdout | search("{{ ivc }}") == True
 
-    - name: VAAI disable FC storage /DataMover/HardwareAcceleratedInit
+    - name: VAAI enable FC storage /DataMover/HardwareAcceleratedInit
       shell: esxcli --server {{ inventory_hostname }} system settings advanced set --int-value {{ iv }} --option /DataMover/HardwareAcceleratedInit
       delegate_to: 10.10.10.10
       register: vmaMMT3

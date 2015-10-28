@@ -1,0 +1,67 @@
+---
+
+- hosts: esxhosts
+  remote_user: vi-admin
+  gather_facts: no
+  vars:
+    iv: "1"
+    ivc: "   Int Value: 0"
+
+  tasks:
+
+
+    - name: VAAI FC storage /VMFS3/HardwareAcceleratedLocking
+      shell: esxcli --server {{ inventory_hostname }} system settings advanced list --option=/VMFS3/HardwareAcceleratedLocking
+      delegate_to: 10.10.10.10
+      register: vmavaai1
+      changed_when: False
+
+    - name: VAAI FC storage /DataMover/HardwareAcceleratedMove
+      shell: esxcli --server {{ inventory_hostname }} system settings advanced list --option=/DataMover/HardwareAcceleratedMove
+      delegate_to: 10.10.10.10
+      register: vmavaai2
+      changed_when: False
+
+    - name: VAAI FC storage /DataMover/HardwareAcceleratedInit
+      shell: esxcli --server {{ inventory_hostname }} system settings advanced list --option=/DataMover/HardwareAcceleratedInit
+      delegate_to: 10.10.10.10
+      register: vmavaai3
+      changed_when: False
+
+
+
+
+    - name: VAAI disable FC storage /VMFS3/HardwareAcceleratedLocking
+      shell: esxcli --server {{ inventory_hostname }} system settings advanced set --int-value {{ iv }} --option /VMFS3/HardwareAcceleratedLocking
+      delegate_to: 10.10.10.10
+      register: vmaMMT1
+      when: vmavaai1.stdout | search("{{ ivc }}") == True
+
+    - name: VAAI disable FC storage /DataMover/HardwareAcceleratedMove
+      shell: esxcli --server {{ inventory_hostname }} system settings advanced set --int-value {{ iv }} --option /DataMover/HardwareAcceleratedMove
+      delegate_to: 10.10.10.10
+      register: vmaMMT2
+      when: vmavaai2.stdout | search("{{ ivc }}") == True
+
+    - name: VAAI disable FC storage /DataMover/HardwareAcceleratedInit
+      shell: esxcli --server {{ inventory_hostname }} system settings advanced set --int-value {{ iv }} --option /DataMover/HardwareAcceleratedInit
+      delegate_to: 10.10.10.10
+      register: vmaMMT3
+      when: vmavaai3.stdout | search("{{ ivc }}") == True
+
+    - name: VAAI FC storage
+      shell: esxcli --server {{ inventory_hostname }} storage core device vaai status get
+      delegate_to: 10.10.10.10
+      register: vmaMMT
+      changed_when: False
+
+    - debug: var=vmaMMT
+    - debug: var=vmavaai1.stdout_lines
+    - debug: var=vmavaai2.stdout_lines
+    - debug: var=vmavaai3.stdout_lines
+    - debug: var=vmaMMT1.stdout_lines
+    - debug: var=vmaMMT2.stdout_lines
+    - debug: var=vmaMMT3.stdout_lines
+    - debug: var=inventory_hostname
+#    - debug: var=groups['all']
+

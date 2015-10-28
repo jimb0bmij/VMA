@@ -1,0 +1,24 @@
+---
+
+- hosts: all
+  remote_user: vi-admin
+  gather_facts: no
+  tasks:
+
+
+    - name: get maintenanceMode
+      shell: esxcli --server {{ inventory_hostname }} system maintenanceMode get
+      delegate_to: 10.10.10.10
+      failed_when: "'Disabled' in vmaMMg.stdout"
+      register: vmaMMg
+
+    - name: set maintenanceMode
+      shell: esxcli --server {{ inventory_hostname }} system maintenanceMode set --enable true
+      delegate_to: 10.10.10.10
+      register: vmaMMT
+
+    - debug: var=vmaMMT
+    - debug: var=vmaMMg
+    - debug: var=inventory_hostname
+    - debug: var=groups['all']
+

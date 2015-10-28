@@ -1,0 +1,25 @@
+---
+
+- hosts: esxhosts
+  remote_user: vi-admin
+  gather_facts: no
+  tasks:
+
+    - name: get maintenanceMode
+      shell: esxcli --server {{ inventory_hostname }} system maintenanceMode get
+      delegate_to: 10.10.10.10
+      failed_when: "'Disabled' in vmaMMg.stdout"
+      register: vmaMMg
+
+
+    - name: Send email
+      delegate_to: 127.0.0.1
+      local_action: mail
+        host=mta.domain.org
+        port=25
+        subject="Ansible test mail  {{ inventory_hostname }} "
+        body="Testing email"
+        from=emailname@gmail.com
+        to=emailname@gmail.com
+        charset=utf8
+
